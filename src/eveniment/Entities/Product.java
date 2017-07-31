@@ -1,73 +1,176 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package eveniment.Entities;
 
-import eveniment.Entities.Enums.PriceRate;
-import eveniment.Entities.Enums.RowState;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Collection;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
-public class Product {
-    
-    private int _id;
-    private String _name;
-    private String _description;
-    private float _price;
-    private PriceRate _rate;
-    private int _categoryId;
-    private RowState _state;
-    
-    public int getId() {
-        return _id;
+/**
+ *
+ * @author Andrei
+ */
+@Entity
+@Table(name = "product")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Product.findAll", query = "SELECT p FROM Product p")
+    , @NamedQuery(name = "Product.findById", query = "SELECT p FROM Product p WHERE p.id = :id")
+    , @NamedQuery(name = "Product.findByName", query = "SELECT p FROM Product p WHERE p.name = :name")
+    , @NamedQuery(name = "Product.findByDescription", query = "SELECT p FROM Product p WHERE p.description = :description")
+    , @NamedQuery(name = "Product.findByPrice", query = "SELECT p FROM Product p WHERE p.price = :price")
+    , @NamedQuery(name = "Product.findByRate", query = "SELECT p FROM Product p WHERE p.rate = :rate")
+    , @NamedQuery(name = "Product.findByRowState", query = "SELECT p FROM Product p WHERE p.rowState = :rowState")})
+public class Product implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "id")
+    private Integer id;
+    @Basic(optional = false)
+    @Column(name = "name")
+    private String name;
+    @Basic(optional = false)
+    @Column(name = "description")
+    private String description;
+    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
+    @Basic(optional = false)
+    @Column(name = "price")
+    private BigDecimal price;
+    @Basic(optional = false)
+    @Column(name = "rate")
+    private String rate;
+    @Basic(optional = false)
+    @Column(name = "row_state")
+    private String rowState;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "product")
+    private Collection<ProgramProducts> programProductsCollection;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "productId")
+    private Collection<EventItem> eventItemCollection;
+
+    public Product() {
     }
 
-    public void setId(int _id) {
-        this._id = _id;
+    public Product(Integer id) {
+        this.id = id;
+    }
+
+    public Product(Integer id, String name, String description, BigDecimal price, String rate, String rowState) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.rate = rate;
+        this.rowState = rowState;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
-    public void setName(String _name) {
-        this._name = _name;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDescription() {
-        return _description;
+        return description;
     }
 
-    public void setDescription(String _description) {
-        this._description = _description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public float getPrice() {
-        return _price;
+    public BigDecimal getPrice() {
+        return price;
     }
 
-    public void setPrice(float _price) {
-        this._price = _price;
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 
-    public PriceRate getRate() {
-        return _rate;
+    public String getRate() {
+        return rate;
     }
 
-    public void setRate(PriceRate _rate) {
-        this._rate = _rate;
+    public void setRate(String rate) {
+        this.rate = rate;
     }
 
-    public int getCategoryId() {
-        return _categoryId;
+    public String getRowState() {
+        return rowState;
     }
 
-    public void setCategoryId(int _categoryId) {
-        this._categoryId = _categoryId;
+    public void setRowState(String rowState) {
+        this.rowState = rowState;
     }
 
-    public RowState getState() {
-        return _state;
+    @XmlTransient
+    public Collection<ProgramProducts> getProgramProductsCollection() {
+        return programProductsCollection;
     }
 
-    public void setState(RowState _state) {
-        this._state = _state;
+    public void setProgramProductsCollection(Collection<ProgramProducts> programProductsCollection) {
+        this.programProductsCollection = programProductsCollection;
     }
 
+    @XmlTransient
+    public Collection<EventItem> getEventItemCollection() {
+        return eventItemCollection;
+    }
+
+    public void setEventItemCollection(Collection<EventItem> eventItemCollection) {
+        this.eventItemCollection = eventItemCollection;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Product)) {
+            return false;
+        }
+        Product other = (Product) object;
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "eveniment.Entities.Product[ id=" + id + " ]";
+    }
     
 }

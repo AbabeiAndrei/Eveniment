@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+  <persistence-unit name="EvenimentPU" transaction-type="RESOURCE_LOCAL">
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+    <class>eveniment.Entities.Category</class>
+    <class>eveniment.Entities.Product</class>
+    <class>eveniment.Entities.Period</class>
+    <class>eveniment.Entities.Program</class>
+    <class>eveniment.Entities.ProgramProducts</class>
+    <class>eveniment.Entities.Event</class>
+    <class>eveniment.Entities.Users</class>
+    <class>eveniment.Entities.ProgramCategories</class>
+    <class>eveniment.Entities.EventItem</class>
+    <properties>
+      <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/eveniment?zeroDateTimeBehavior=convertToNull"/>
+      <property name="javax.persistence.jdbc.user" value="eveniment"/>
+      <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
+      <property name="javax.persistence.jdbc.password" value="eveniment"/>
+    </properties>
+  </persistence-unit>
+</persistence>

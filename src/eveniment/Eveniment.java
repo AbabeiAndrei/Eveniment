@@ -1,19 +1,21 @@
 package eveniment;
 
-import eveniment.DataLayer.CategoryJpaController;
-import eveniment.Entities.Category;
+import eveniment.UI.LoginForm;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
 public class Eveniment {
 
     public static void main(String[] args) {
+        java.awt.EventQueue.invokeLater(Eveniment::Run);
+    }
+    
+    public static void Run(){
         
-        CategoryJpaController con = new CategoryJpaController(Persistence.createEntityManagerFactory("EvenimentPU"));
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("EvenimentPU");
         
-        Category cat = con.findCategory(1);
-        
-        System.out.println(cat.getName().toString());
+        LoginForm loginFrame = new LoginForm(emf);
+        loginFrame.setVisible(true);
     }
     
 }

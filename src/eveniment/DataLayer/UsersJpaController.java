@@ -253,5 +253,14 @@ public class UsersJpaController implements Serializable {
             em.close();
         }
     }
+
+    public Users login(String mail, String pass) {
+        for(Users user : findUsersEntities()) {
+            if(user.getEmail().equals(mail) && user.getPassword().equals(pass))
+                return user;
+        }
+        
+        return null;
+    }
     
 }

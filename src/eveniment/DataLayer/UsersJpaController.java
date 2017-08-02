@@ -5,6 +5,7 @@
  */
 package eveniment.DataLayer;
 
+import eveniment.DataLayer.Logic.Crypto;
 import eveniment.DataLayer.exceptions.IllegalOrphanException;
 import eveniment.DataLayer.exceptions.NonexistentEntityException;
 import java.io.Serializable;
@@ -255,6 +256,8 @@ public class UsersJpaController implements Serializable {
     }
 
     public Users login(String mail, String pass) {
+        pass = Crypto.HashMd5(pass);
+        
         for(Users user : findUsersEntities()) {
             if(user.getEmail().equals(mail) && user.getPassword().equals(pass))
                 return user;

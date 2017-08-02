@@ -8,6 +8,9 @@ package eveniment.DataLayer;
 import eveniment.DataLayer.exceptions.NonexistentEntityException;
 import eveniment.Entities.Period;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -134,5 +137,16 @@ public class PeriodJpaController implements Serializable {
             em.close();
         }
     }
-    
+
+    public float getPrice(int day, int month, int year) {
+        BigDecimal maxPrice = new BigDecimal(0f);
+        
+        Date date = new GregorianCalendar(year, month + 1, day).getTime();
+        
+        for(Period per : findPeriodEntities())
+            if(per.getFrom().compareTo(date) >= 0 && per.getTo().compareTo(date) <= 0 && per.getPrice().compareTo(maxPrice) > 0)
+                maxPrice = per.getPrice();
+        
+        return maxPrice.floatValue();
+    }
 }

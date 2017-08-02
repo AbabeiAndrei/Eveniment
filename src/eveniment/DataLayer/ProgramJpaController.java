@@ -308,5 +308,14 @@ public class ProgramJpaController implements Serializable {
             em.close();
         }
     }
+
+    public String[] getAllProgramNames() {
+        List<String> list = new ArrayList<>();
+        
+        for(Program program : findProgramEntities())
+            list.add(program.getName());
+        
+        return list.toArray(new String[list.size()]);
+    }
     
 }

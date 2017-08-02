@@ -44,11 +44,11 @@ public class Period implements Serializable {
     @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
-    @Column(name = "from")
+    @Column(name = "`from`")
     @Temporal(TemporalType.DATE)
     private Date from;
     @Basic(optional = false)
-    @Column(name = "to")
+    @Column(name = "`to`")
     @Temporal(TemporalType.DATE)
     private Date to;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation

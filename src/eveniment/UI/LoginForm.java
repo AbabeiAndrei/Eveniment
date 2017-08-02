@@ -2,6 +2,8 @@
 package eveniment.UI;
 
 import eveniment.DataLayer.UsersJpaController;
+import eveniment.Entities.Enums.AccessLevel;
+import eveniment.Entities.Enums.Convertor;
 import eveniment.Entities.Users;
 import java.awt.Container;
 import java.awt.Font;
@@ -96,7 +98,6 @@ public class LoginForm extends JFrame {
         gridBagConstraints.anchor = GridBagConstraints.LINE_START;
         panel.add(lblMail, gridBagConstraints);
 
-        txtMail.setHorizontalAlignment(JTextField.TRAILING);
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 1;
@@ -122,13 +123,27 @@ public class LoginForm extends JFrame {
         
         Users user = userController.login(txtMail.getText(), new String(txtPass.getPassword()));
         
-        if(user == null)
-             JOptionPane.showMessageDialog(null, "Incorect user or password", getTitle(), JOptionPane.ERROR_MESSAGE);
+        if(user == null) {
+            JOptionPane.showMessageDialog(null, "Incorect user or password", getTitle(), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         
+        setVisible(false);
         
+        if(user.getAccessLevel() == Convertor.ToShort(AccessLevel.Regular))
+            new EvenimenteForm(_entityManagerFactory).setVisible(true);
+        else
+            new ListaEvenimenteForm().setVisible(true);
+        
+        dispose();
     }
 
     private void btnRegisterActionPerformed(ActionEvent evt) {
-        JOptionPane.showMessageDialog(null, "Will be", getTitle(), JOptionPane.INFORMATION_MESSAGE);
+        setVisible(false); //you can't see me!
+        RegisterForm regWind = new RegisterForm(_entityManagerFactory);
+        
+        regWind.setVisible(true);
+        
+        
     }
 }

@@ -5,6 +5,7 @@
  */
 package eveniment.Entities;
 
+import eveniment.Entities.Enums.RowState;
 import java.io.Serializable;
 import java.util.Collection;
 import javax.persistence.Basic;
@@ -48,6 +49,9 @@ public class Users implements Serializable {
     @Column(name = "email")
     private String email;
     @Basic(optional = false)
+    @Column(name = "fullName")
+    private String fullName;
+    @Basic(optional = false)
     @Column(name = "phone")
     private String phone;
     @Basic(optional = false)
@@ -71,9 +75,10 @@ public class Users implements Serializable {
         this.id = id;
     }
 
-    public Users(Integer id, String email, String phone, String password, short accessLevel, String rowState) {
+    public Users(Integer id, String email, String fullName, String phone, String password, short accessLevel, String rowState) {
         this.id = id;
         this.email = email;
+        this.fullName = fullName;
         this.phone = phone;
         this.password = password;
         this.accessLevel = accessLevel;
@@ -120,12 +125,12 @@ public class Users implements Serializable {
         this.accessLevel = accessLevel;
     }
 
-    public String getRowState() {
-        return rowState;
+    public RowState getRowState() {
+        return RowState.valueOf(rowState);
     }
 
-    public void setRowState(String rowState) {
-        this.rowState = rowState;
+    public void setRowState(RowState rowState) {
+        this.rowState = rowState.toString();
     }
 
     @XmlTransient
@@ -144,6 +149,14 @@ public class Users implements Serializable {
 
     public void setEventCollection1(Collection<Event> eventCollection1) {
         this.eventCollection1 = eventCollection1;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     @Override

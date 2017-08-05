@@ -14,13 +14,17 @@ public class CalendarTableModel extends AbstractTableModel {
         "LUNI", "MARTI", "MIERCURI", "JOI", "VINERI", "SAMBATA", "DUMINICA"
     };
 
+    public CalendarTableModel(Calendar calendar) {
+        _calendar = calendar;
+    }
+    
     public CalendarTableModel(int year, int month) {
         _calendar = new GregorianCalendar(year, month, 1);
     }
 
     @Override
     public int getRowCount() {
-        return CalendarUtils.getNumberOfWeeks(_calendar) + 1;
+        return _calendar.getActualMaximum(Calendar.WEEK_OF_MONTH);
     }
 
     @Override
@@ -30,7 +34,19 @@ public class CalendarTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        int weekDay = _calendar.get(Calendar.DAY_OF_WEEK);
+        int last = _calendar.get(Calendar.DAY_OF_MONTH);
+        _calendar.set(Calendar.DAY_OF_MONTH, 1);
+        int weekDay = _calendar.get(Calendar.DAY_OF_WEEK) + 1;
+        if(weekDay >= 8)
+            weekDay = 1;
+        _calendar.set(Calendar.DAY_OF_MONTH, last);
+        
+        if(rowIndex <= 0)
+        {
+            if(columnIndex + 1 < weekDay)
+                return null;
+            return columnIndex - weekDay + 2;
+        }
         
         int location = (rowIndex * getColumnCount()) + columnIndex;
         
@@ -42,7 +58,7 @@ public class CalendarTableModel extends AbstractTableModel {
         int daysInMonth = _calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
         
         if(daysInMonth < day)
-            return daysInMonth;
+            return null;
         
         return day;
     }
@@ -62,7 +78,8 @@ public class CalendarTableModel extends AbstractTableModel {
     }
 
     public void setYear(int year) {
-        _calendar.set(year, Calendar.YEAR);
+        //_calendar.set(Calendar.YEAR, year);
+        fireTableDataChanged();
     }
 
     public int getMonth() {
@@ -70,10 +87,12 @@ public class CalendarTableModel extends AbstractTableModel {
     }
 
     public void setMonth(int month) {
-        _calendar.set(month, Calendar.MONTH);
+        //_calendar.set(Calendar.MONTH, month);
+        fireTableDataChanged();
     }    
     
-    public void setDate(int month, int year){
-        _calendar.set(year, month, 1);
+    public void setDate(int year, int month){
+        ///_calendar.set(year, month, _calendar.get(Calendar.DAY_OF_MONTH));
+        fireTableDataChanged();
     }
 }

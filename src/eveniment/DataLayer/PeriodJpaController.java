@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package eveniment.DataLayer;
 
 import eveniment.DataLayer.exceptions.NonexistentEntityException;
@@ -19,10 +15,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
-/**
- *
- * @author Andrei
- */
 public class PeriodJpaController implements Serializable {
 
     public PeriodJpaController(EntityManagerFactory emf) {
@@ -141,10 +133,10 @@ public class PeriodJpaController implements Serializable {
     public float getPrice(int day, int month, int year) {
         BigDecimal maxPrice = new BigDecimal(0f);
         
-        Date date = new GregorianCalendar(year, month + 1, day).getTime();
+        Date date = new GregorianCalendar(year, month - 1, day).getTime();
         
         for(Period per : findPeriodEntities())
-            if(per.getFrom().compareTo(date) >= 0 && per.getTo().compareTo(date) <= 0 && per.getPrice().compareTo(maxPrice) > 0)
+            if(per.getFrom().before(date) && per.getTo().after(date) && per.getPrice().compareTo(maxPrice) > 0)
                 maxPrice = per.getPrice();
         
         return maxPrice.floatValue();

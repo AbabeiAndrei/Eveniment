@@ -3,12 +3,21 @@ package eveniment.UI;
 
 import eveniment.DataLayer.PeriodJpaController;
 import eveniment.DataLayer.ProgramJpaController;
+import eveniment.Entities.Program;
+import eveniment.UI.Filters.IntFilter;
 import eveniment.UI.Models.CalendarTableModel;
+import eveniment.UI.Models.OptionsTableModel;
 import eveniment.Utils.CalendarUtils;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import javax.persistence.EntityManagerFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JLabel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableModel;
+import javax.swing.text.PlainDocument;
 
 public class EvenimenteForm extends javax.swing.JFrame {
 
@@ -18,10 +27,13 @@ public class EvenimenteForm extends javax.swing.JFrame {
     
     private final Calendar _calendar;
     private final CalendarTableModel _calendarModel;
+    private final OptionsTableModel _optionsModel;
     
     private int _day;
     private int _year;
     private int _month;
+    private List<Program> _eventTypes;
+    private Program _program;
 
     public EvenimenteForm(EntityManagerFactory entityManagerFactory) {
         initComponents();
@@ -31,9 +43,11 @@ public class EvenimenteForm extends javax.swing.JFrame {
         _periodController = new PeriodJpaController(entityManagerFactory);
         _programController = new ProgramJpaController(entityManagerFactory);
         
-        _calendarModel = new CalendarTableModel(_year, _month);
-        
         _calendar = Calendar.getInstance();
+        _calendar.setFirstDayOfWeek(0);
+        
+        _calendarModel = new CalendarTableModel(_calendar);
+        _optionsModel = new OptionsTableModel(entityManagerFactory, tblOptions);
         
         _day = _calendar.get(Calendar.DAY_OF_MONTH);
         _month = _calendar.get(Calendar.MONTH);
@@ -45,7 +59,6 @@ public class EvenimenteForm extends javax.swing.JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
         lblInfo = new javax.swing.JLabel();
         spMain = new javax.swing.JSplitPane();
@@ -125,6 +138,11 @@ public class EvenimenteForm extends javax.swing.JFrame {
         ));
         tblDatePicker.setColumnSelectionAllowed(true);
         tblDatePicker.getTableHeader().setReorderingAllowed(false);
+        tblDatePicker.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblDatePickerMouseClicked(evt);
+            }
+        });
         spDatePicker.setViewportView(tblDatePicker);
         tblDatePicker.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
@@ -213,8 +231,33 @@ public class EvenimenteForm extends javax.swing.JFrame {
     }//GEN-LAST:event_btnNextActionPerformed
 
     private void cbEventTypeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbEventTypeActionPerformed
+        int index = cbEventType.getSelectedIndex();
         
+        if(index < 0)
+            return;
+        
+        setEventDetails(_eventTypes.get(index));
+        recalculateTotal();
     }//GEN-LAST:event_cbEventTypeActionPerformed
+
+    private void tblDatePickerMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblDatePickerMouseClicked
+        int row = tblDatePicker.rowAtPoint(evt.getPoint());
+        int col = tblDatePicker.columnAtPoint(evt.getPoint());
+        if (row >= 0 && col >= 0) {
+            Object val = tblDatePicker.getValueAt(row, col);
+            if(val == null)
+                return;
+            
+            String valStr = val.toString();
+            
+            if(valStr.trim().equals(""))
+                return;
+            
+            int day = Integer.parseInt(valStr);
+            
+            setDay(day);
+        }
+    }//GEN-LAST:event_tblDatePickerMouseClicked
     // </editor-fold>   
     
     //<editor-fold defaultstate="collapsed" desc="methods">
@@ -248,7 +291,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         
         setDay(_day);
         
-        FillCalendar(month);
+        fillCalendar(month);
     }
     
     private void setDay(int day){
@@ -256,32 +299,35 @@ public class EvenimenteForm extends javax.swing.JFrame {
         if(day <= 0)
             day = 1;
         
-        _calendar.set(_year, _month + 1, 1);
+        _calendar.set(_year, _month, 1);
         
         if(_calendar.getActualMaximum(Calendar.DAY_OF_MONTH) < day)
             day = _calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
         
-        _calendar.set(_year, _month + 1, day);
+        _calendar.set(_year, _month, day);
         
         int dayOfWeek = _calendar.get(Calendar.DAY_OF_WEEK);
         String dayOfWeekName = CalendarUtils.getDayName(dayOfWeek).toUpperCase();
         String monthName = CalendarUtils.getMonthName(_month);
         
-        lblSelected.setText("Selectat - " + dayOfWeekName + " " + _day + " " + monthName + " " + _year);
-        
-        RecalculateTotal();
+        lblSelected.setText("Selectat - " + dayOfWeekName + " " + day + " " + monthName + " " + _year);
         
         _day = day;
+        
+        recalculateTotal();
     }
     
-    private void FillCalendar(int month) {
+    private void fillCalendar(int month) {
         _calendarModel.setDate(_year, month);
     }
     
-    private void RecalculateTotal() {
+    private void recalculateTotal() {
         float total = 0f;
         
         total += _periodController.getPrice(_day, _month, _year);
+        
+        if(_program != null)
+            total += _program.getPrice().floatValue();
         
         DecimalFormat formater = new DecimalFormat("#.## LEI");
         
@@ -291,10 +337,17 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private void setModels() {
         tblDatePicker.setModel(_calendarModel);
         
-        String[] eventTypes = _programController.getAllProgramNames();
+        _eventTypes = _programController.findProgramEntities();
         
-        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(eventTypes);
+        List<String> eventTypes = new ArrayList<>();
+        
+        for(Program type : _eventTypes)
+            eventTypes.add(type.getName());
+        
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(eventTypes.toArray(new String[eventTypes.size()]));
+        
         cbEventType.setModel(model);
+        tblOptions.setModel(_optionsModel);
     } 
 
     private void configureUi() {
@@ -302,6 +355,21 @@ public class EvenimenteForm extends javax.swing.JFrame {
         
         spMain.setResizeWeight(.8d);
         spMain.setDividerLocation(.8d);
+        
+        tblDatePicker.setRowHeight(50);
+        
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER );
+        centerRenderer.setVerticalAlignment(JLabel.CENTER );
+        tblDatePicker.setDefaultRenderer(String.class, centerRenderer);
+        
+        PlainDocument doc = (PlainDocument) txtNumberOfPersons.getDocument();
+        doc.setDocumentFilter(new IntFilter());
+    }
+
+    private void setEventDetails(Program program) {
+        _program = program;
+        _optionsModel.set(_program);
     }//</editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Generated fields">   
@@ -332,5 +400,6 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private javax.swing.JTable tblOptions;
     private javax.swing.JTextField txtNumberOfPersons;
     // End of variables declaration//GEN-END:variables
+
     // </editor-fold>  
 }

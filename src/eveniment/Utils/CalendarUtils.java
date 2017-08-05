@@ -1,8 +1,12 @@
 
 package eveniment.Utils;
 
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 
 public class CalendarUtils {
@@ -39,6 +43,7 @@ public class CalendarUtils {
     }
     
     public static String getDayName(int day){
+        
         if(day < 1 || day > 7)
             return null;
         

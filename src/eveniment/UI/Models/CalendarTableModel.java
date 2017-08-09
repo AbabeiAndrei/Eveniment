@@ -1,6 +1,7 @@
 
 package eveniment.UI.Models;
 
+import eveniment.DataLayer.PeriodJpaController;
 import eveniment.Utils.CalendarUtils;
 import java.util.Calendar;
 import java.util.GregorianCalendar;

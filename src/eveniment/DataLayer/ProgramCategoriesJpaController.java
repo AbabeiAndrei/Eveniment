@@ -18,6 +18,8 @@ import eveniment.Entities.ProgramCategoriesPK;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Expression;
 
 /**
  *
@@ -131,6 +133,20 @@ public class ProgramCategoriesJpaController implements Serializable {
         }
     }
 
+    public List<ProgramCategories> findProgramCategoriesEntities(int programId) {
+        EntityManager em = getEntityManager();
+        try {
+            CriteriaBuilder builder = em.getCriteriaBuilder();      
+            CriteriaQuery cq = builder.createQuery();      
+            Root root = cq.from(ProgramCategories.class);
+            cq.select(root).where(builder.and(builder.equal(root.get("program_id"), programId)));
+            Query q = em.createQuery(cq);
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
+    }
+    
     public List<ProgramCategories> findProgramCategoriesEntities() {
         return findProgramCategoriesEntities(true, -1, -1);
     }

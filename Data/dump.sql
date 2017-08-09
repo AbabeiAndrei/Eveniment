@@ -77,10 +77,10 @@ CREATE TABLE IF NOT EXISTS `period` (
 CREATE TABLE IF NOT EXISTS `product` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
-  `description` varchar(1024) NOT NULL,
+  `description` varchar(1024)  NULL DEFAULT NULL,
   `price` decimal(10,2) NOT NULL,
   `rate` varchar(32) NOT NULL,
-  `category_id` int(11) NOT NULL,
+  `category_id` int(11)  NULL DEFAULT NULL,
   `row_state` varchar(32) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `IDX_row_state` (`row_state`),
@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS `program_products` (
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `email` varchar(255) NOT NULL,
+  `fullName` VARCHAR(255) NOT NULL,
   `phone` varchar(255) NOT NULL,
   `password` varchar(64) NOT NULL,
   `access_level` smallint(6) NOT NULL,

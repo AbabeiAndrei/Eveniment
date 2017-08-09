@@ -59,6 +59,9 @@ public class Product implements Serializable {
     @Column(name = "rate")
     private String rate;
     @Basic(optional = false)
+    @Column(name = "category_id")
+    private Integer categoryId;
+    @Basic(optional = false)
     @Column(name = "row_state")
     private String rowState;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "product")
@@ -73,12 +76,13 @@ public class Product implements Serializable {
         this.id = id;
     }
 
-    public Product(Integer id, String name, String description, BigDecimal price, String rate, String rowState) {
+    public Product(Integer id, String name, String description, BigDecimal price, String rate, Integer categoryId, String rowState) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.rate = rate;
+        this.categoryId = categoryId;
         this.rowState = rowState;
     }
 
@@ -148,6 +152,16 @@ public class Product implements Serializable {
         this.eventItemCollection = eventItemCollection;
     }
 
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    
+    
     @Override
     public int hashCode() {
         int hash = 0;
@@ -170,7 +184,7 @@ public class Product implements Serializable {
 
     @Override
     public String toString() {
-        return "eveniment.Entities.Product[ id=" + id + " ]";
+        return getName();
     }
     
 }

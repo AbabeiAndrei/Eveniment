@@ -1,10 +1,12 @@
 
 package eveniment.UI;
 
+import eveniment.DataLayer.EventJpaController;
 import eveniment.DataLayer.PeriodJpaController;
 import eveniment.DataLayer.ProgramJpaController;
 import eveniment.Entities.Program;
 import eveniment.UI.Filters.IntFilter;
+import eveniment.UI.Models.CalendarCellRender;
 import eveniment.UI.Models.CalendarTableModel;
 import eveniment.UI.Models.OptionsTableModel;
 import eveniment.Utils.CalendarUtils;
@@ -16,7 +18,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableModel;
+import javax.swing.table.TableCellEditor;
 import javax.swing.text.PlainDocument;
 
 public class EvenimenteForm extends javax.swing.JFrame {
@@ -27,6 +29,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
     
     private final Calendar _calendar;
     private final CalendarTableModel _calendarModel;
+    private final CalendarCellRender _calendarRender;
     private final OptionsTableModel _optionsModel;
     
     private int _day;
@@ -34,6 +37,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private int _month;
     private List<Program> _eventTypes;
     private Program _program;
+    private final EventJpaController _eventController;
 
     public EvenimenteForm(EntityManagerFactory entityManagerFactory) {
         initComponents();
@@ -41,12 +45,14 @@ public class EvenimenteForm extends javax.swing.JFrame {
         
         _entityManagerFactory = entityManagerFactory;
         _periodController = new PeriodJpaController(entityManagerFactory);
+        _eventController = new EventJpaController(entityManagerFactory);
         _programController = new ProgramJpaController(entityManagerFactory);
         
         _calendar = Calendar.getInstance();
         _calendar.setFirstDayOfWeek(0);
         
         _calendarModel = new CalendarTableModel(_calendar);
+        _calendarRender = new CalendarCellRender(_calendar, _eventController);
         _optionsModel = new OptionsTableModel(entityManagerFactory, tblOptions);
         
         _day = _calendar.get(Calendar.DAY_OF_MONTH);
@@ -85,6 +91,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         pnlTotal = new javax.swing.JPanel();
         lblTextTotal = new javax.swing.JLabel();
         lblSelectedTotal = new javax.swing.JLabel();
+        btnDetails = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -212,6 +219,14 @@ public class EvenimenteForm extends javax.swing.JFrame {
         lblSelectedTotal.setText("0.00 RON");
         pnlTotal.add(lblSelectedTotal, java.awt.BorderLayout.CENTER);
 
+        btnDetails.setText("Detalii");
+        btnDetails.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDetailsActionPerformed(evt);
+            }
+        });
+        pnlTotal.add(btnDetails, java.awt.BorderLayout.LINE_END);
+
         pnlSelected.add(pnlTotal, java.awt.BorderLayout.SOUTH);
 
         spMain.setRightComponent(pnlSelected);
@@ -258,6 +273,10 @@ public class EvenimenteForm extends javax.swing.JFrame {
             setDay(day);
         }
     }//GEN-LAST:event_tblDatePickerMouseClicked
+
+    private void btnDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDetailsActionPerformed
+        
+    }//GEN-LAST:event_btnDetailsActionPerformed
     // </editor-fold>   
     
     //<editor-fold defaultstate="collapsed" desc="methods">
@@ -313,7 +332,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         lblSelected.setText("Selectat - " + dayOfWeekName + " " + day + " " + monthName + " " + _year);
         
         _day = day;
-        
+                
         recalculateTotal();
     }
     
@@ -336,6 +355,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
 
     private void setModels() {
         tblDatePicker.setModel(_calendarModel);
+        tblDatePicker.setDefaultRenderer(String.class, _calendarRender);
         
         _eventTypes = _programController.findProgramEntities();
         
@@ -348,6 +368,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         
         cbEventType.setModel(model);
         tblOptions.setModel(_optionsModel);
+        tblOptions.setRowHeight(24);
     } 
 
     private void configureUi() {
@@ -374,6 +395,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="Generated fields">   
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnDetails;
     private javax.swing.JButton btnNext;
     private javax.swing.JButton btnPrev;
     private javax.swing.JComboBox<String> cbEventType;

@@ -4,21 +4,27 @@ package eveniment.UI;
 import eveniment.DataLayer.EventJpaController;
 import eveniment.DataLayer.PeriodJpaController;
 import eveniment.DataLayer.ProgramJpaController;
+import eveniment.Entities.Enums.RowState;
+import eveniment.Entities.Event;
+import eveniment.Entities.EventItem;
+import eveniment.Entities.Product;
 import eveniment.Entities.Program;
+import eveniment.Entities.Users;
 import eveniment.UI.Filters.IntFilter;
 import eveniment.UI.Models.CalendarCellRender;
 import eveniment.UI.Models.CalendarTableModel;
+import eveniment.UI.Models.ProgramTypeModel;
 import eveniment.UI.Models.OptionsTableModel;
 import eveniment.Utils.CalendarUtils;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.List;
 import javax.persistence.EntityManagerFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellEditor;
 import javax.swing.text.PlainDocument;
 
 public class EvenimenteForm extends javax.swing.JFrame {
@@ -38,11 +44,13 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private List<Program> _eventTypes;
     private Program _program;
     private final EventJpaController _eventController;
+    private final Users _user;
 
-    public EvenimenteForm(EntityManagerFactory entityManagerFactory) {
+    public EvenimenteForm(EntityManagerFactory entityManagerFactory, Users user) {
         initComponents();
         configureUi();
         
+        _user = user;
         _entityManagerFactory = entityManagerFactory;
         _periodController = new PeriodJpaController(entityManagerFactory);
         _eventController = new EventJpaController(entityManagerFactory);
@@ -275,7 +283,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
     }//GEN-LAST:event_tblDatePickerMouseClicked
 
     private void btnDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDetailsActionPerformed
-        
+        Event event = CreateEvent();
     }//GEN-LAST:event_btnDetailsActionPerformed
     // </editor-fold>   
     
@@ -359,12 +367,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         
         _eventTypes = _programController.findProgramEntities();
         
-        List<String> eventTypes = new ArrayList<>();
-        
-        for(Program type : _eventTypes)
-            eventTypes.add(type.getName());
-        
-        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(eventTypes.toArray(new String[eventTypes.size()]));
+        ProgramTypeModel model = new ProgramTypeModel(_eventTypes);
         
         cbEventType.setModel(model);
         tblOptions.setModel(_optionsModel);
@@ -391,7 +394,59 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private void setEventDetails(Program program) {
         _program = program;
         _optionsModel.set(_program);
-    }//</editor-fold>
+    }
+
+    private Event CreateEvent() {
+        Event event = new Event();
+        
+        Integer numberOfPersons;
+        
+        try
+        {
+            numberOfPersons = Integer.parseInt(txtNumberOfPersons.getText());
+        }
+        catch(Exception ex)
+        {
+            return null;
+        }
+            
+        if(numberOfPersons <= 0)
+            return null;
+        
+        Program program = (Program)cbEventType.getSelectedItem();
+        
+        event.setProgramId(program);
+        
+        event.setDate(_calendar.getTime());
+        event.setCreatedAt(CalendarUtils.getTime());
+        event.setCreatedBy(_user);
+        event.setRowState(RowState.Created.toString());
+        event.setForUser(_user);
+        event.setNumberOfPersons(numberOfPersons);
+        event.setEventItemCollection(createEventItems());
+        
+        return event;
+    }
+    
+    private Collection<EventItem> createEventItems() {
+        List<EventItem> items = new ArrayList<>();
+        
+        int rows = _optionsModel.getRowCount();
+        
+        for(int i = 0; i < rows ; i++)
+        {
+            Product row = (Product)_optionsModel.getValueAt(i, 1);
+            
+            EventItem item = new EventItem();
+            
+            item.setName("");
+            
+            items.add(item);
+        }
+        
+        return items;
+    }
+//</editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Generated fields">   
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -422,6 +477,8 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private javax.swing.JTable tblOptions;
     private javax.swing.JTextField txtNumberOfPersons;
     // End of variables declaration//GEN-END:variables
+
+
 
     // </editor-fold>  
 }

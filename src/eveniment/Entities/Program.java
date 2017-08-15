@@ -155,7 +155,7 @@ public class Program implements Serializable {
 
     @Override
     public String toString() {
-        return "eveniment.Entities.Program[ id=" + id + " ]";
+        return getName();
     }
     
 }

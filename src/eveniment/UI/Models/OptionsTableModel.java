@@ -107,6 +107,7 @@ public class OptionsTableModel extends AbstractTableModel {
         else if(row < _categories.size() + _products.size()){
             Product product = _products.get(row - _categories.size());
             JCheckBox check = new JCheckBox(product.getName());
+            check.setModel(new ButtonProductModel(product));
             return new DefaultCellEditor(check);
         }
         

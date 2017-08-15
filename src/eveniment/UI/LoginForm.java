@@ -131,7 +131,7 @@ public class LoginForm extends JFrame {
         setVisible(false);
         
         if(user.getAccessLevel() == Convertor.ToShort(AccessLevel.Regular))
-            new EvenimenteForm(_entityManagerFactory).setVisible(true);
+            new EvenimenteForm(_entityManagerFactory, user).setVisible(true);
         else
             new ListaEvenimenteForm().setVisible(true);
         

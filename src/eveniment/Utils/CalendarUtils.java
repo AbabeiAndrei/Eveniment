@@ -74,4 +74,11 @@ public class CalendarUtils {
     public static Date getTime() {
         return new GregorianCalendar().getTime();
     }
+
+    public static boolean equals(Calendar calendar1, Calendar calendar2) {
+        return calendar1.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR) &&
+               calendar1.get(Calendar.MONTH) == calendar2.get(Calendar.MONTH) &&
+               calendar1.get(Calendar.DAY_OF_MONTH) == calendar2.get(Calendar.DAY_OF_MONTH);
+    }
+
 }

@@ -13,6 +13,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -20,22 +22,42 @@ public class CalendarCellRender extends DefaultTableCellRenderer {
 
     private final EventJpaController _eventRepository;
     private final Calendar _calendar;
+    private List<Event> _entries;
 
     public CalendarCellRender(Calendar calendar, EventJpaController eventRepository) {
         _calendar = calendar;
         _eventRepository = eventRepository;
+        refresh();
+    }
+    
+    public void refresh(){
+        _entries = _eventRepository.findEventEntities();
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column); 
         
-        for(Event event : _eventRepository.findEventEntities())
+        if(value == null)
+            return comp;
+        
+        for(Event event : _entries)
         {
             Date date = event.getDate();
-            if(date.getYear()== _calendar.get(Calendar.YEAR) && date.getMonth() == _calendar.get(Calendar.MONTH) && Integer.toString(date.getDay()).equals(value.toString()))
+            Calendar cal = new GregorianCalendar();
+            cal.setTime(date);
+            int year = cal.get(Calendar.YEAR);
+            if(year == _calendar.get(Calendar.YEAR))
             {
-                comp.setBackground(Color.red);
+                int month = cal.get(Calendar.MONTH);
+                if(month == _calendar.get(Calendar.MONTH))
+                {
+                    int day = cal.get(Calendar.DAY_OF_MONTH);
+                    if(Integer.toString(day).equals(value.toString()))
+                        comp.setBackground(Color.red);
+                    else
+                        comp.setBackground(Color.white);
+                }
             }
         }
         

@@ -1,9 +1,12 @@
 
 package eveniment.UI;
 
+import eveniment.DataLayer.EventItemJpaController;
 import eveniment.DataLayer.EventJpaController;
 import eveniment.DataLayer.PeriodJpaController;
 import eveniment.DataLayer.ProgramJpaController;
+import eveniment.Entities.Category;
+import eveniment.Entities.Enums.PriceRate;
 import eveniment.Entities.Enums.RowState;
 import eveniment.Entities.Event;
 import eveniment.Entities.EventItem;
@@ -16,15 +19,22 @@ import eveniment.UI.Models.CalendarTableModel;
 import eveniment.UI.Models.ProgramTypeModel;
 import eveniment.UI.Models.OptionsTableModel;
 import eveniment.Utils.CalendarUtils;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.GregorianCalendar;
 import java.util.List;
 import javax.persistence.EntityManagerFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumnModel;
 import javax.swing.text.PlainDocument;
 
 public class EvenimenteForm extends javax.swing.JFrame {
@@ -43,8 +53,10 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private int _month;
     private List<Program> _eventTypes;
     private Program _program;
-    private final EventJpaController _eventController;
+    
     private final Users _user;
+    private final EventJpaController _eventController;
+    private final EventItemJpaController _eventItemController;
 
     public EvenimenteForm(EntityManagerFactory entityManagerFactory, Users user) {
         initComponents();
@@ -55,13 +67,19 @@ public class EvenimenteForm extends javax.swing.JFrame {
         _periodController = new PeriodJpaController(entityManagerFactory);
         _eventController = new EventJpaController(entityManagerFactory);
         _programController = new ProgramJpaController(entityManagerFactory);
+        _eventItemController = new EventItemJpaController(entityManagerFactory);
         
         _calendar = Calendar.getInstance();
         _calendar.setFirstDayOfWeek(0);
         
         _calendarModel = new CalendarTableModel(_calendar);
         _calendarRender = new CalendarCellRender(_calendar, _eventController);
-        _optionsModel = new OptionsTableModel(entityManagerFactory, tblOptions);
+        _optionsModel = new OptionsTableModel(entityManagerFactory, tblOptions){
+            @Override
+            public void valueChanged(Object sender) {
+                recalculateTotal();
+            }
+        };
         
         _day = _calendar.get(Calendar.DAY_OF_MONTH);
         _month = _calendar.get(Calendar.MONTH);
@@ -100,6 +118,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         lblTextTotal = new javax.swing.JLabel();
         lblSelectedTotal = new javax.swing.JLabel();
         btnDetails = new javax.swing.JButton();
+        btnConfirm = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -194,6 +213,9 @@ public class EvenimenteForm extends javax.swing.JFrame {
 
         lblNumberOfPersons.setText("Numar de persoane");
         pnlNumberOfPersons.add(lblNumberOfPersons, java.awt.BorderLayout.WEST);
+
+        txtNumberOfPersons.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        txtNumberOfPersons.setText("1");
         pnlNumberOfPersons.add(txtNumberOfPersons, java.awt.BorderLayout.CENTER);
 
         pnlSelectedMain.add(pnlNumberOfPersons);
@@ -234,6 +256,15 @@ public class EvenimenteForm extends javax.swing.JFrame {
             }
         });
         pnlTotal.add(btnDetails, java.awt.BorderLayout.LINE_END);
+
+        btnConfirm.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        btnConfirm.setText("Confirma");
+        btnConfirm.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnConfirmActionPerformed(evt);
+            }
+        });
+        pnlTotal.add(btnConfirm, java.awt.BorderLayout.PAGE_END);
 
         pnlSelected.add(pnlTotal, java.awt.BorderLayout.SOUTH);
 
@@ -283,8 +314,49 @@ public class EvenimenteForm extends javax.swing.JFrame {
     }//GEN-LAST:event_tblDatePickerMouseClicked
 
     private void btnDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDetailsActionPerformed
-        Event event = CreateEvent();
+        Event event = createEvent();
+        
+        if(event == null)
+            return;
+        
+        EventOptions form = new EventOptions(event);
+        form.setVisible(true);
+        form.setLocationRelativeTo(this);
+                
+        int dayOfWeek = _calendar.get(Calendar.DAY_OF_WEEK);
+        String dayOfWeekName = CalendarUtils.getDayName(dayOfWeek).toUpperCase();
+        String monthName = CalendarUtils.getMonthName(_month);
+        
+        form.setTitle(cbEventType.getSelectedItem().toString() + " - " + dayOfWeekName + " " + _day + " " + monthName + " " + _year);
     }//GEN-LAST:event_btnDetailsActionPerformed
+
+    private void btnConfirmActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmActionPerformed
+        Event event = createEvent();
+        
+        if(event == null) {
+            JOptionPane.showMessageDialog(this, "Nu s-a putut creea evenimentul", getTitle(), JOptionPane.ERROR_MESSAGE);
+            return;
+        }        
+        int result = JOptionPane.showConfirmDialog(this, "Esti sigur ca vrei sa creezi evenimentul?", getTitle(), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        
+        if(result != JOptionPane.YES_OPTION)
+            return;
+        
+        Collection<EventItem> items = event.getEventItemCollection();
+        
+        event.setEventItemCollection(null);
+        
+        _eventController.create(event);
+        
+        for(EventItem item : items)
+        {
+            item.setEventId(event);
+            _eventItemController.create(item);
+        }
+        
+        _calendarRender.refresh();
+        JOptionPane.showMessageDialog(this, "Eveniment creeat", getTitle(), JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_btnConfirmActionPerformed
     // </editor-fold>   
     
     //<editor-fold defaultstate="collapsed" desc="methods">
@@ -331,7 +403,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         if(_calendar.getActualMaximum(Calendar.DAY_OF_MONTH) < day)
             day = _calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
         
-        _calendar.set(_year, _month, day);
+        _calendar.set(_year, _month - 1, day);
         
         int dayOfWeek = _calendar.get(Calendar.DAY_OF_WEEK);
         String dayOfWeekName = CalendarUtils.getDayName(dayOfWeek).toUpperCase();
@@ -340,6 +412,8 @@ public class EvenimenteForm extends javax.swing.JFrame {
         lblSelected.setText("Selectat - " + dayOfWeekName + " " + day + " " + monthName + " " + _year);
         
         _day = day;
+        
+        btnConfirm.setEnabled(dayCanBeSelected());
                 
         recalculateTotal();
     }
@@ -352,9 +426,12 @@ public class EvenimenteForm extends javax.swing.JFrame {
         float total = 0f;
         
         total += _periodController.getPrice(_day, _month, _year);
+                
+        Event event = createEvent();
         
-        if(_program != null)
-            total += _program.getPrice().floatValue();
+        if(event != null)
+            for(EventItem item : event.getEventItemCollection())
+                total += item.getPrice().floatValue();
         
         DecimalFormat formater = new DecimalFormat("#.## LEI");
         
@@ -363,7 +440,10 @@ public class EvenimenteForm extends javax.swing.JFrame {
 
     private void setModels() {
         tblDatePicker.setModel(_calendarModel);
-        tblDatePicker.setDefaultRenderer(String.class, _calendarRender);
+        TableColumnModel tblModel = tblDatePicker.getColumnModel();
+        
+        for(int i = 0 ; i < tblModel.getColumnCount() ; i++)
+            tblModel.getColumn(i).setCellRenderer(_calendarRender);
         
         _eventTypes = _programController.findProgramEntities();
         
@@ -389,6 +469,23 @@ public class EvenimenteForm extends javax.swing.JFrame {
         
         PlainDocument doc = (PlainDocument) txtNumberOfPersons.getDocument();
         doc.setDocumentFilter(new IntFilter());
+        
+        txtNumberOfPersons.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+              recalculateTotal();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+              recalculateTotal();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+              recalculateTotal();
+            }
+        });
     }
 
     private void setEventDetails(Program program) {
@@ -396,7 +493,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         _optionsModel.set(_program);
     }
 
-    private Event CreateEvent() {
+    private Event createEvent() {
         Event event = new Event();
         
         Integer numberOfPersons;
@@ -405,7 +502,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         {
             numberOfPersons = Integer.parseInt(txtNumberOfPersons.getText());
         }
-        catch(Exception ex)
+        catch(NumberFormatException ex)
         {
             return null;
         }
@@ -413,7 +510,12 @@ public class EvenimenteForm extends javax.swing.JFrame {
         if(numberOfPersons <= 0)
             return null;
         
-        Program program = (Program)cbEventType.getSelectedItem();
+        Object item = cbEventType.getSelectedItem();
+        
+        if(item == null || !(item instanceof Program))
+            return null;
+        
+        Program program = (Program)item;
         
         event.setProgramId(program);
         
@@ -423,33 +525,107 @@ public class EvenimenteForm extends javax.swing.JFrame {
         event.setRowState(RowState.Created.toString());
         event.setForUser(_user);
         event.setNumberOfPersons(numberOfPersons);
-        event.setEventItemCollection(createEventItems());
+        event.setEventItemCollection(createEventItems(program, numberOfPersons));
         
         return event;
     }
     
-    private Collection<EventItem> createEventItems() {
+    private Collection<EventItem> createEventItems(Program program, int persons) {
         List<EventItem> items = new ArrayList<>();
+        
+        if(program.getPrice().floatValue() > 0)
+        {
+            EventItem item = new EventItem();
+            
+            item.setName(program.getName());
+            item.setPrice(program.getPrice());
+            item.setQuantity(1);
+            item.setRowState(RowState.Created.toString());
+            item.setProductId(null);
+            
+            items.add(item);
+        }
+        
+        float price = _periodController.getPrice(_day, _month, _year);
+        
+        if(price > 0)
+        {
+            EventItem item = new EventItem();
+            
+            item.setName(_day + "." + _month + "." + _year);
+            item.setPrice(new BigDecimal(price));
+            item.setQuantity(1);
+            item.setRowState(RowState.Created.toString());
+            item.setProductId(null);
+            
+            items.add(item);
+        }
         
         int rows = _optionsModel.getRowCount();
         
         for(int i = 0; i < rows ; i++)
         {
-            Product row = (Product)_optionsModel.getValueAt(i, 1);
+            Object obj = _optionsModel.getDataObject(i);
+            Product product = null;
+            if(obj instanceof Category)
+            {
+                product = (Product)_optionsModel.getValueAt(i, 1);
+            }
+            else if(obj instanceof Product){
+                if((Boolean)_optionsModel.getValueAt(i, 1))
+                    product = (Product)obj;
+            }
+            else 
+                continue;
+            
+            if(product == null || product.getId() == 0)
+                continue;
             
             EventItem item = new EventItem();
             
-            item.setName("");
+            String multiplier = "";
+            
+            if(product.getRate().equals(PriceRate.ByPersons.toString()))
+                multiplier = " x " + persons;
+            
+            item.setName(product.getName() + multiplier);
+            item.setDescription(product.getDescription());
+            item.setPrice(calculatePrice(product, persons));
+            item.setProductId(product);
+            item.setQuantity(1);
+            item.setRowState(RowState.Created.toString());
             
             items.add(item);
         }
         
         return items;
     }
+    
+    private BigDecimal calculatePrice(Product product, int persons) {
+        float basePrice = product.getPrice().floatValue();
+        
+        if(PriceRate.ByPersons.toString().equals(product.getRate()))
+            basePrice *= persons;
+        
+        return new BigDecimal(basePrice);
+    }
+    
+    private Boolean dayCanBeSelected(){
+        for(Event event : _eventController.findEventEntities())
+        {
+            Calendar calendar = new GregorianCalendar();
+            calendar.setTime(event.getDate());
+            
+            if(CalendarUtils.equals(calendar, _calendar))
+                return false;
+        }
+        return true;
+    }
 //</editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Generated fields">   
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnConfirm;
     private javax.swing.JButton btnDetails;
     private javax.swing.JButton btnNext;
     private javax.swing.JButton btnPrev;
@@ -477,7 +653,6 @@ public class EvenimenteForm extends javax.swing.JFrame {
     private javax.swing.JTable tblOptions;
     private javax.swing.JTextField txtNumberOfPersons;
     // End of variables declaration//GEN-END:variables
-
 
 
     // </editor-fold>  

@@ -8,6 +8,7 @@ package eveniment.UI.Models;
 import eveniment.DataLayer.ProductJpaController;
 import eveniment.Entities.Category;
 import eveniment.Entities.Product;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +30,9 @@ public class CategoryComboBoxModel extends AbstractListModel implements ComboBox
     public CategoryComboBoxModel(Category category, ProductJpaController productRepository) {
         List<Product> products = productRepository.findProductEntities(); 
         
-        _products = new ArrayList<Product>();
+        _products = new ArrayList<>();
+        
+        _products.add(new Product(0, "", "", new BigDecimal(0), "", null, ""));
         
         for(Product product : products)
             if(Objects.equals(product.getCategoryId(), category.getId()))

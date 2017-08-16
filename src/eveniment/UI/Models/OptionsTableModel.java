@@ -10,6 +10,8 @@ import eveniment.Entities.Product;
 import eveniment.Entities.Program;
 import eveniment.Entities.ProgramCategories;
 import eveniment.Entities.ProgramProducts;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManagerFactory;
@@ -21,7 +23,7 @@ import javax.swing.JTextField;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 
-public class OptionsTableModel extends AbstractTableModel {
+public abstract class OptionsTableModel extends AbstractTableModel {
 
     private final EntityManagerFactory _entityManagerFactory;
     private final JTable _table;
@@ -102,12 +104,23 @@ public class OptionsTableModel extends AbstractTableModel {
         {
             Category category = _categories.get(row);
             JComboBox cb = new JComboBox(new CategoryComboBoxModel(category, _productsRepository));
+            cb.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    valueChanged(e);
+                }
+            });
             return new DefaultCellEditor(cb);
         }
         else if(row < _categories.size() + _products.size()){
             Product product = _products.get(row - _categories.size());
             JCheckBox check = new JCheckBox(product.getName());
-            check.setModel(new ButtonProductModel(product));
+            check.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    valueChanged(e);
+                }
+            });
             return new DefaultCellEditor(check);
         }
         
@@ -148,5 +161,17 @@ public class OptionsTableModel extends AbstractTableModel {
             _products.add(pprod.getProduct());
     }
     
+    public Object getDataObject(int row) {
+        if(row < _categories.size())
+        {
+            return _categories.get(row);
+        }
+        else if(row < _categories.size() + _products.size()){
+            return _products.get(row - _categories.size());
+        }
+        
+        return null;
+    }
     
+    public abstract void valueChanged(Object sender);
 }

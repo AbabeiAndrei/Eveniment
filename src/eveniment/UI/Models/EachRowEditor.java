@@ -89,4 +89,10 @@ public class EachRowEditor implements TableCellEditor  {
         
         return editor.getCellEditorValue();
     }
+    
+    public TableCellEditor getRowEditor(int row){
+        if(editors.containsKey(row))
+            return (TableCellEditor) editors.get(row);
+        return null;
+    }
 }

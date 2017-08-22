@@ -6,6 +6,8 @@ import eveniment.DataLayer.ProductJpaController;
 import eveniment.DataLayer.ProgramCategoriesJpaController;
 import eveniment.DataLayer.ProgramProductsJpaController;
 import eveniment.Entities.Category;
+import eveniment.Entities.Event;
+import eveniment.Entities.EventItem;
 import eveniment.Entities.Product;
 import eveniment.Entities.Program;
 import eveniment.Entities.ProgramCategories;
@@ -14,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.persistence.EntityManagerFactory;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JCheckBox;
@@ -126,6 +129,18 @@ public abstract class OptionsTableModel extends AbstractTableModel {
         
         return new DefaultCellEditor(new JTextField());
     }
+    
+    public Object getItemAt(int row){
+        if(row < _categories.size())
+        {
+            return _categories.get(row);
+        }
+        else if(row < _categories.size() + _products.size()){
+            return _products.get(row - _categories.size());
+        }
+        
+        return null;
+    }
 
     private Object getTextAt(int row) {
         if(row < _categories.size())
@@ -171,6 +186,42 @@ public abstract class OptionsTableModel extends AbstractTableModel {
         }
         
         return null;
+    }
+
+    public void setEvent(Event _event) {
+        for(int i = 0 ; i < getRowCount() ; i++){
+            Object item = getItemAt(i);
+            if(item instanceof Category){
+                Category cat = (Category)item;
+                for(EventItem evitem : _event.getEventItemCollection()){
+                    if(evitem.getProductId() != null && Objects.equals(evitem.getProductId().getCategoryId(), cat.getId())){
+                        DefaultCellEditor editor = (DefaultCellEditor)_rowEditor.getRowEditor(i);
+                        JComboBox comp = (JComboBox)editor.getComponent();
+                        CategoryComboBoxModel model = (CategoryComboBoxModel)comp.getModel();
+                        for(int j = 0 ; j < comp.getItemCount() ; j++)
+                        {
+                            Product cbItem = (Product)model.getElementAt(j);
+                            if(Objects.equals(cbItem.getId(), evitem.getProductId().getId())){
+                                comp.setSelectedIndex(j);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            else if(item instanceof Product){
+                Product prod = (Product)item;
+                for(EventItem evitem : _event.getEventItemCollection()){
+                    if(evitem.getProductId() != null && Objects.equals(evitem.getProductId().getId(), prod.getId())){
+                        DefaultCellEditor editor = (DefaultCellEditor)_rowEditor.getRowEditor(i);
+                        JCheckBox comp = (JCheckBox)editor.getComponent();
+                        comp.setSelected(true);
+                        break;
+                    }
+                }
+            }
+        }
+        fireTableDataChanged();
     }
     
     public abstract void valueChanged(Object sender);

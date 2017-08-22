@@ -21,11 +21,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.EntityManagerFactory;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -59,7 +65,14 @@ public class EventEditorForm extends javax.swing.JFrame {
         _programController = new ProgramJpaController(entityManagerFactory);
         _eventItemController = new EventItemJpaController(entityManagerFactory);
         
+        if(event == null)
+            setTitle("Adaugare eveniment");
+        else 
+            setTitle("Modificare eveniment");
+        
         setModels();
+        bindEntityToGui();
+        configureUi();
     }
     
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -68,6 +81,8 @@ public class EventEditorForm extends javax.swing.JFrame {
         pnlSelected = new javax.swing.JPanel();
         pnlSelectedMain = new javax.swing.JPanel();
         pnlSelectedDate = new javax.swing.JPanel();
+        lblDate = new javax.swing.JLabel();
+        txtDate = new javax.swing.JTextField();
         pnlEventType = new javax.swing.JPanel();
         cbEventType = new javax.swing.JComboBox<>();
         pnlNumberOfPersons = new javax.swing.JPanel();
@@ -82,18 +97,24 @@ public class EventEditorForm extends javax.swing.JFrame {
         btnDetails = new javax.swing.JButton();
         btnConfirm = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         pnlSelected.setLayout(new java.awt.BorderLayout(20, 20));
 
         pnlSelectedMain.setLayout(new java.awt.GridLayout(3, 0, 10, 10));
 
-        pnlSelectedDate.setLayout(new java.awt.BorderLayout());
+        pnlSelectedDate.setLayout(new java.awt.BorderLayout(10, 0));
+
+        lblDate.setText("Data (dd.mm.yyyy)");
+        pnlSelectedDate.add(lblDate, java.awt.BorderLayout.LINE_START);
+        pnlSelectedDate.add(txtDate, java.awt.BorderLayout.CENTER);
+
         pnlSelectedMain.add(pnlSelectedDate);
 
         pnlEventType.setLayout(new java.awt.BorderLayout());
 
         cbEventType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1", "2", "3" }));
+        cbEventType.setEnabled(false);
         cbEventType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cbEventTypeActionPerformed(evt);
@@ -171,31 +192,23 @@ public class EventEditorForm extends javax.swing.JFrame {
         listener.actionPerformed(new ActionEvent(this, 1, "Confirm"));
     }
     
-    private void cbEventTypeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbEventTypeActionPerformed
-        int index = cbEventType.getSelectedIndex();
-
-        if(index < 0)
-        return;
-
-        setEventDetails(_eventTypes.get(index));
-        recalculateTotal();
-    }//GEN-LAST:event_cbEventTypeActionPerformed
-
     private void btnDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDetailsActionPerformed
+        Calendar cal = getCalendar();
+        
         Event event = createEvent();
 
         if(event == null)
-        return;
+            return;
 
         EventOptions form = new EventOptions(event);
         form.setVisible(true);
         form.setLocationRelativeTo(this);
 
-        int dayOfWeek = _calendar.get(Calendar.DAY_OF_WEEK);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         String dayOfWeekName = CalendarUtils.getDayName(dayOfWeek).toUpperCase();
-        String monthName = CalendarUtils.getMonthName(_month);
+        String monthName = CalendarUtils.getMonthName(cal.get(Calendar.MONTH));
 
-        form.setTitle(cbEventType.getSelectedItem().toString() + " - " + dayOfWeekName + " " + _day + " " + monthName + " " + _year);
+        form.setTitle(event.getProgramId().getName() + " - " + dayOfWeekName + " " + cal.get(Calendar.DAY_OF_MONTH) + " " + monthName + " " + cal.get(Calendar.YEAR));
     }//GEN-LAST:event_btnDetailsActionPerformed
 
     private void btnConfirmActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmActionPerformed
@@ -225,11 +238,22 @@ public class EventEditorForm extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, "Eveniment creeat", getTitle(), JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_btnConfirmActionPerformed
 
+    private void cbEventTypeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbEventTypeActionPerformed
+        int index = cbEventType.getSelectedIndex();
+
+        if(index < 0)
+        return;
+
+        setEventDetails(_eventTypes.get(index));
+        recalculateTotal();
+    }//GEN-LAST:event_cbEventTypeActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnConfirm;
     private javax.swing.JButton btnDetails;
     private javax.swing.JComboBox<String> cbEventType;
+    private javax.swing.JLabel lblDate;
     private javax.swing.JLabel lblNumberOfPersons;
     private javax.swing.JLabel lblSelectedTotal;
     private javax.swing.JLabel lblTextTotal;
@@ -242,15 +266,19 @@ public class EventEditorForm extends javax.swing.JFrame {
     private javax.swing.JPanel pnlTotal;
     private javax.swing.JScrollPane spOptions;
     private javax.swing.JTable tblOptions;
+    private javax.swing.JTextField txtDate;
     private javax.swing.JTextField txtNumberOfPersons;
     // End of variables declaration//GEN-END:variables
-    
-    
     
     private void recalculateTotal() {
         float total = 0f;
         
-        total += _periodController.getPrice(_day, _month, _year);
+        Calendar cal = getCalendar();
+        int day = cal.get(Calendar.DAY_OF_MONTH);       
+        int month = cal.get(Calendar.MONTH);
+        int year = cal.get(Calendar.YEAR);
+        
+        total += _periodController.getPrice(day, month, year);
                 
         Event event = createEvent();
         
@@ -273,7 +301,7 @@ public class EventEditorForm extends javax.swing.JFrame {
         };    
         
         _eventTypes = _programController.findProgramEntities();
-        
+                
         ProgramTypeModel model = new ProgramTypeModel(_eventTypes);
         
         cbEventType.setModel(model);
@@ -286,23 +314,46 @@ public class EventEditorForm extends javax.swing.JFrame {
         
         PlainDocument doc = (PlainDocument) txtNumberOfPersons.getDocument();
         doc.setDocumentFilter(new IntFilter());
+        btnConfirm.setEnabled(dayCanBeSelected());
         
-        txtNumberOfPersons.getDocument().addDocumentListener(new DocumentListener() {
+        doc.addDocumentListener(new DocumentListener() {
             @Override
             public void changedUpdate(DocumentEvent e) {
-              recalculateTotal();
+                recalculateTotal();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-              recalculateTotal();
+                recalculateTotal();
             }
 
             @Override
             public void insertUpdate(DocumentEvent e) {
-              recalculateTotal();
+                recalculateTotal();
             }
         });
+        
+        txtDate.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                btnConfirm.setEnabled(dayCanBeSelected());
+                recalculateTotal();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                btnConfirm.setEnabled(dayCanBeSelected());
+                recalculateTotal();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                btnConfirm.setEnabled(dayCanBeSelected());
+                recalculateTotal();
+            }
+        });
+        
+        cbEventType.setEnabled(_event == null || _event.getId() <= 0);
     }
 
     private void setEventDetails(Program program) {
@@ -311,7 +362,11 @@ public class EventEditorForm extends javax.swing.JFrame {
     }
 
     private Event createEvent() {
-        Event event = new Event();
+        Event event;
+        if(_event == null)
+            event = new Event();
+        else 
+            event = _event;
         
         Integer numberOfPersons;
         
@@ -336,19 +391,26 @@ public class EventEditorForm extends javax.swing.JFrame {
         
         event.setProgramId(program);
         
-        event.setDate(_calendar.getTime());
+        event.setDate(getCalendar().getTime());
         event.setCreatedAt(CalendarUtils.getTime());
         event.setCreatedBy(_user);
         event.setRowState(RowState.Created.toString());
         event.setForUser(_user);
         event.setNumberOfPersons(numberOfPersons);
-        event.setEventItemCollection(createEventItems(program, numberOfPersons));
+        if(event.getEventItemCollection() == null && event.getEventItemCollection().size() <= 0)
+            event.setEventItemCollection(createEventItems(program, numberOfPersons));
         
         return event;
     }
     
     private Collection<EventItem> createEventItems(Program program, int persons) {
         List<EventItem> items = new ArrayList<>();
+        
+        Calendar cal = getCalendar();
+        int day = cal.get(Calendar.DAY_OF_MONTH);       
+        int month = cal.get(Calendar.MONTH);
+        int year = cal.get(Calendar.YEAR);
+
         
         if(program.getPrice().floatValue() > 0)
         {
@@ -363,13 +425,13 @@ public class EventEditorForm extends javax.swing.JFrame {
             items.add(item);
         }
         
-        float price = _periodController.getPrice(_day, _month, _year);
+        float price = _periodController.getPrice(day, month, year);
         
         if(price > 0)
         {
             EventItem item = new EventItem();
             
-            item.setName(_day + "." + _month + "." + _year);
+            item.setName(day + "." + month + "." + year);
             item.setPrice(new BigDecimal(price));
             item.setQuantity(1);
             item.setRowState(RowState.Created.toString());
@@ -428,14 +490,59 @@ public class EventEditorForm extends javax.swing.JFrame {
     }
     
     private Boolean dayCanBeSelected(){
+        Calendar cal = getCalendar();
+        if(cal == null)
+            return false;
         for(Event event : _eventController.findEventEntities())
         {
             Calendar calendar = new GregorianCalendar();
             calendar.setTime(event.getDate());
             
-            if(CalendarUtils.equals(calendar, _calendar))
+            if(CalendarUtils.equals(calendar, cal))
                 return false;
         }
         return true;
+    }
+
+    private Calendar getCalendar() {
+        Calendar cal = new GregorianCalendar();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH);
+        try {
+            cal.setTime(sdf.parse(txtDate.getText()));
+        } catch (ParseException ex) {
+            JOptionPane.showMessageDialog(this, "Data nu este completata corect", getTitle(), JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+        
+        return cal;
+    }
+    
+    private void bindEntityToGui(){
+        Calendar cal = new GregorianCalendar();
+        
+        if(_event != null)
+            cal.setTime(_event.getDate());
+        
+        int day = cal.get(Calendar.DAY_OF_MONTH);       
+        int month = cal.get(Calendar.MONTH);
+        int year = cal.get(Calendar.YEAR);
+        
+        txtDate.setText(day + "." + month + "." + year);
+        
+        if(_event == null)
+            return;
+        
+        txtNumberOfPersons.setText(Integer.toString(_event.getNumberOfPersons()));
+        
+        for(int i = 0 ; i < cbEventType.getItemCount() ; i++){
+            Program prog = _eventTypes.get(i);
+            
+            if(Objects.equals(_event.getProgramId().getId(), prog.getId())){
+                cbEventType.setSelectedIndex(i);
+                break;
+            }
+        }
+        
+        _optionsModel.setEvent(_event);
     }
 }

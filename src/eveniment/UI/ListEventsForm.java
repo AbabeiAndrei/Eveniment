@@ -58,8 +58,8 @@ public class ListEventsForm extends javax.swing.JFrame {
         tblEvents = new javax.swing.JTable();
         pnlActionsBase = new javax.swing.JPanel();
         pnlActions = new javax.swing.JPanel();
-        btnEdit = new javax.swing.JButton();
         btnAdd = new javax.swing.JButton();
+        btnEdit = new javax.swing.JButton();
         pnlActionDelete = new javax.swing.JPanel();
         btnDelete = new javax.swing.JButton();
 
@@ -89,21 +89,21 @@ public class ListEventsForm extends javax.swing.JFrame {
 
         pnlActions.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 
-        btnEdit.setText("Adauga eveniment");
-        btnEdit.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnEditActionPerformed(evt);
-            }
-        });
-        pnlActions.add(btnEdit);
-
-        btnAdd.setText("Modifica eveniment");
+        btnAdd.setText("Adauga eveniment");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnAddActionPerformed(evt);
             }
         });
         pnlActions.add(btnAdd);
+
+        btnEdit.setText("Modifica eveniment");
+        btnEdit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEditActionPerformed(evt);
+            }
+        });
+        pnlActions.add(btnEdit);
 
         pnlActionsBase.add(pnlActions, java.awt.BorderLayout.CENTER);
 

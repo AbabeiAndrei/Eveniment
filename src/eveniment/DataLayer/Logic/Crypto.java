@@ -6,6 +6,8 @@ import java.security.NoSuchAlgorithmException;
 
 
 public class Crypto {
+    //metoda ce converteste un string in md5 (https://en.wikipedia.org/wiki/MD5)
+    //algorithm https://stackoverflow.com/questions/415953/how-can-i-generate-an-md5-hash
     public static String HashMd5(String source){
         StringBuilder hexString = new StringBuilder();
         MessageDigest md;

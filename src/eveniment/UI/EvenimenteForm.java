@@ -27,19 +27,16 @@ import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
 import javax.persistence.EntityManagerFactory;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.PlainDocument;
 
 public class EvenimenteForm extends javax.swing.JFrame {
 
-    private final EntityManagerFactory _entityManagerFactory;
     private final PeriodJpaController _periodController;
     private final ProgramJpaController _programController;
     
@@ -63,17 +60,20 @@ public class EvenimenteForm extends javax.swing.JFrame {
         configureUi();
         
         _user = user;
-        _entityManagerFactory = entityManagerFactory;
         _periodController = new PeriodJpaController(entityManagerFactory);
         _eventController = new EventJpaController(entityManagerFactory);
         _programController = new ProgramJpaController(entityManagerFactory);
         _eventItemController = new EventItemJpaController(entityManagerFactory);
         
+        //se creaza instanta de calendar ce va fi afisata in UI
         _calendar = Calendar.getInstance();
         _calendar.setFirstDayOfWeek(0);
         
+        //secreaza modelul pentru tabel
         _calendarModel = new CalendarTableModel(_calendar);
+        //se creaza modelul de randare a celulelor (daca sunt rosii sau normale)
         _calendarRender = new CalendarCellRender(_calendar, _eventController);
+        //se creaza modelul pentru tabelul de optiuni (cu produse)
         _optionsModel = new OptionsTableModel(entityManagerFactory, tblOptions){
             @Override
             public void valueChanged(Object sender) {
@@ -84,8 +84,10 @@ public class EvenimenteForm extends javax.swing.JFrame {
         _day = _calendar.get(Calendar.DAY_OF_MONTH);
         _month = _calendar.get(Calendar.MONTH);
         _year = _calendar.get(Calendar.YEAR);
+        //se selecteaza luna curenta
         selectMonth(_month);
         
+        //se asociaza modelele pentru controale
         setModels();
     }
 
@@ -136,7 +138,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         pnlActions.setLayout(new java.awt.BorderLayout());
 
         btnPrev.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        btnPrev.setText("PREV");
+        btnPrev.setText("LUNA PRECEDENTA");
         btnPrev.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnPrevActionPerformed(evt);
@@ -145,7 +147,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
         pnlActions.add(btnPrev, java.awt.BorderLayout.WEST);
 
         btnNext.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        btnNext.setText("NEXT");
+        btnNext.setText("URMATOAREA LUNA");
         btnNext.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnNextActionPerformed(evt);
@@ -277,24 +279,26 @@ public class EvenimenteForm extends javax.swing.JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="Events">   
     private void btnPrevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPrevActionPerformed
-        selectMonth(_month - 1);
+        selectMonth(_month - 1);// se apasa pe butonul LUNA PRECEDENTA
     }//GEN-LAST:event_btnPrevActionPerformed
 
     private void btnNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNextActionPerformed
-        selectMonth(_month + 1);
+        selectMonth(_month + 1);// se apasa pe butonul URMATOAREA LUNA
     }//GEN-LAST:event_btnNextActionPerformed
 
     private void cbEventTypeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbEventTypeActionPerformed
+        //cand se schimba programul (Nunta, dans, etc..)
         int index = cbEventType.getSelectedIndex();
         
         if(index < 0)
             return;
-        
+        //se seteaza noul program
         setEventDetails(_eventTypes.get(index));
-        recalculateTotal();
+        recalculateTotal();//se recalculeaza totalul pentru programul respectiv
     }//GEN-LAST:event_cbEventTypeActionPerformed
 
     private void tblDatePickerMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblDatePickerMouseClicked
+        //cand se alege o alta data din calendar
         int row = tblDatePicker.rowAtPoint(evt.getPoint());
         int col = tblDatePicker.columnAtPoint(evt.getPoint());
         if (row >= 0 && col >= 0) {
@@ -314,11 +318,13 @@ public class EvenimenteForm extends javax.swing.JFrame {
     }//GEN-LAST:event_tblDatePickerMouseClicked
 
     private void btnDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDetailsActionPerformed
-        Event event = createEvent();
+        //cand se apasa pe butonul de detalii
+        Event event = createEvent();    //se creaza un eveniment pe baza optinilor selectate
         
         if(event == null)
             return;
         
+        //se afiseaza un dialog cu optiunile
         EventOptions form = new EventOptions(event);
         form.setVisible(true);
         form.setLocationRelativeTo(this);
@@ -331,6 +337,7 @@ public class EvenimenteForm extends javax.swing.JFrame {
     }//GEN-LAST:event_btnDetailsActionPerformed
 
     private void btnConfirmActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmActionPerformed
+        //daca se confirma optiunea
         Event event = createEvent();
         
         if(event == null) {
@@ -342,12 +349,16 @@ public class EvenimenteForm extends javax.swing.JFrame {
         if(result != JOptionPane.YES_OPTION)
             return;
         
+        //se salveaza produsele
         Collection<EventItem> items = event.getEventItemCollection();
         
+        //se detaseaza de eveniment colectia de produse
         event.setEventItemCollection(null);
         
+        //se adauga evenimentul in baza de date
         _eventController.create(event);
         
+        //se adauga si produsele unul cate unul
         for(EventItem item : items)
         {
             item.setEventId(event);
@@ -361,11 +372,11 @@ public class EvenimenteForm extends javax.swing.JFrame {
     
     //<editor-fold defaultstate="collapsed" desc="methods">
     private void selectMonth(int month) {
-        
+        //daca luna este mai mica de ianuarie
         if(month <= 0)
         {
-            month = 12;
-            _year--;
+            month = 12;//fa luna decembrie
+            _year--;//scade anul
         }
         else if(month >= 13)
         {

@@ -11,10 +11,11 @@ public class Eveniment {
     }
     
     public static void Run(){
-        
+        //se pregateste managerul pentru conexiuni la baza de date
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("EvenimentPU");
         
         LoginForm loginFrame = new LoginForm(emf);
+        //se afiseaza fereastra de login
         loginFrame.setVisible(true);
     }
     
